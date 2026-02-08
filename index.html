@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FemurUI - Medical AI Decision Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-elevated: #12121a;
+    --bg-card: #16161f;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.12);
+    --text: #e4e4e7;
+    --text-secondary: #71717a;
+    --text-muted: #52525b;
+    --accent: #5eead4;
+    --accent-dim: rgba(94,234,212,0.1);
+    --accent-mid: rgba(94,234,212,0.2);
+    --warm: #fbbf24;
+    --warm-dim: rgba(251,191,36,0.1);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.1);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.1);
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== SUBTLE BACKGROUND ===== */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bg-glow::before {
+    content: '';
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    top: -200px;
+    right: -200px;
+    background: radial-gradient(circle, rgba(94,234,212,0.04) 0%, transparent 70%);
+  }
+  .bg-glow::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    bottom: 20%;
+    left: -100px;
+    background: radial-gradient(circle, rgba(251,191,36,0.03) 0%, transparent 70%);
+  }
+
+  /* ===== SCROLL REVEAL ===== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-d1 { transition-delay: 0.08s; }
+  .reveal-d2 { transition-delay: 0.16s; }
+  .reveal-d3 { transition-delay: 0.24s; }
+  .reveal-d4 { transition-delay: 0.32s; }
+  .reveal-d5 { transition-delay: 0.40s; }
+
+  /* ===== LAYOUT ===== */
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  section {
+    padding: 120px 0;
+  }
+
+  /* ===== NAVIGATION ===== */
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 20px 28px;
+    transition: all 0.4s ease;
+  }
+  .nav.scrolled {
+    padding: 12px 28px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    transition: color 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-top: 80px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(94,234,212,0.15);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+  }
+  .hero-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1.0;
+    letter-spacing: -3px;
+    margin-bottom: 20px;
+    color: #fff;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 480px;
+    margin-bottom: 48px;
+    font-weight: 400;
+  }
+
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .hero-metric {
+    padding: 20px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: border-color 0.3s ease;
+  }
+  .hero-metric:hover {
+    border-color: var(--border-hover);
+  }
+  .hero-metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .hero-metric-value .unit {
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .hero-metric-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* Hero visual */
+  .hero-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 520px;
+  }
+  .xray-container {
+    width: 320px;
+    height: 400px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, #111118 0%, #0d0d14 100%);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+  }
+  .xray-container::after {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    right: 0;
+    height: 200%;
+    background: linear-gradient(180deg, transparent 0%, rgba(94,234,212,0.03) 50%, transparent 100%);
+    animation: scanPass 4s ease-in-out infinite;
+  }
+  @keyframes scanPass {
+    0%, 100% { transform: translateY(-25%); }
+    50% { transform: translateY(25%); }
+  }
+
+  .xray-bone-art {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .xray-bone-art svg {
+    width: 60%;
+    height: 80%;
+    opacity: 0.5;
+  }
+
+  .xray-fracture-indicator {
+    position: absolute;
+    top: 52%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border: 1.5px solid rgba(248,113,113,0.4);
+    border-radius: 50%;
+    animation: fracturePulse 3s ease-in-out infinite;
+  }
+  .xray-fracture-indicator::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px dashed rgba(248,113,113,0.3);
+    border-radius: 50%;
+  }
+  @keyframes fracturePulse {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  }
+
+  .xray-label {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+  .xray-label-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--red);
+  }
+  .xray-label-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  /* Floating annotation cards */
+  .annotation {
+    position: absolute;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .annotation-top {
+    top: 40px;
+    right: -40px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .annotation-bottom {
+    bottom: 60px;
+    left: -50px;
+    color: var(--red);
+    font-weight: 600;
+  }
+  .annotation-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+
+  /* ===== SECTION HEADINGS ===== */
+  .section-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .section-heading {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .section-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  /* ===== DIVIDER ===== */
+  .section-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+    border: none;
+  }
+
+  /* ===== PROBLEM ===== */
+  .problem-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .problem-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 36px;
+  }
+  .problem-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  .problem-stat-row:hover {
+    border-color: var(--border-hover);
+    transform: translateX(4px);
+  }
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .stat-icon-red { background: var(--red-dim); }
+  .stat-icon-warm { background: var(--warm-dim); }
+  .stat-icon-green { background: var(--green-dim); }
+  .stat-text-value { font-weight: 700; font-size: 15px; }
+  .stat-text-label { font-size: 13px; color: var(--text-secondary); }
+
+  /* Problem visual - simplified xray */
+  .problem-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .problem-xray-frame {
+    width: 280px;
+    height: 340px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, #0f0f18, #0a0a12);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .problem-xray-frame svg {
+    width: 55%;
+    height: 75%;
+    opacity: 0.4;
+  }
+  .fracture-line {
+    position: absolute;
+    top: 52%;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    opacity: 0.6;
+    transform: rotate(-5deg);
+  }
+  .fracture-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+  }
+  .fracture-crosshair::before,
+  .fracture-crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(248,113,113,0.3);
+  }
+  .fracture-crosshair::before {
+    top: 0; bottom: 0; left: 50%; width: 1px;
+    transform: translateX(-50%);
+  }
+  .fracture-crosshair::after {
+    left: 0; right: 0; top: 50%; height: 1px;
+    transform: translateY(-50%);
+  }
+
+  /* ===== PIPELINE ===== */
+  .pipeline-section {
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pipeline-steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    margin-top: 60px;
+    background: var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .pipeline-step {
+    background: var(--bg-card);
+    padding: 36px 24px;
+    text-align: center;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+  .pipeline-step:hover {
+    background: rgba(94,234,212,0.03);
+  }
+
+  .pipeline-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .pipeline-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(94,234,212,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    transition: all 0.3s ease;
+  }
+  .pipeline-step:hover .pipeline-icon {
+    background: var(--accent-mid);
+    border-color: rgba(94,234,212,0.25);
+  }
+
+  .pipeline-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .pipeline-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Arrow between steps */
+  .pipeline-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    z-index: 2;
+  }
+
+  /* ===== TECH STACK ===== */
+  .tech-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 60px;
+  }
+
+  .tech-item {
+    padding: 32px 24px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  .tech-item:hover {
+    border-color: var(--border-hover);
+  }
+
+  .tech-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.5px;
+  }
+  .tech-icon-tf { background: linear-gradient(135deg, #ff8f00, #ff6f00); color: #fff; }
+  .tech-icon-qt { background: linear-gradient(135deg, #41cd52, #2e7d32); color: #fff; }
+  .tech-icon-gpt { background: linear-gradient(135deg, #10a37f, #0d8b6d); color: #fff; }
+  .tech-icon-cv { background: linear-gradient(135deg, #7c4dff, #536dfe); color: #fff; }
+
+  .tech-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .tech-detail {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ===== METRICS ===== */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 60px;
+  }
+
+  .metric-block {
+    padding: 32px 24px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .metric-block:hover {
+    border-color: var(--border-hover);
+  }
+
+  /* Animated bar at bottom of metric */
+  .metric-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    border-radius: 0 3px 0 0;
+    transition: width 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .metric-block.visible .metric-bar {
+    width: var(--bar-width);
+  }
+  .metric-bar-teal { background: var(--accent); }
+  .metric-bar-green { background: var(--green); }
+  .metric-bar-warm { background: var(--warm); }
+
+  .metric-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 42px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-number .pct {
+    font-size: 20px;
+    color: var(--text-secondary);
+  }
+  .metric-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  .metric-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ===== COMPARISON ===== */
+  .comparison-section {
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 60px;
+    align-items: start;
+  }
+
+  .comparison-table {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .comparison-table th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .comparison-table td {
+    padding: 14px 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+  }
+  .comparison-table td:first-child {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+  .comparison-table tr:last-child td {
+    border-bottom: none;
+  }
+  .comparison-table tr.best-row {
+    background: rgba(94,234,212,0.04);
+  }
+  .comparison-table tr.best-row td {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .comparison-table tr.best-row td:first-child {
+    font-weight: 700;
+  }
+  .best-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    font-family: 'Inter', sans-serif;
+    vertical-align: middle;
+  }
+
+  /* Accuracy bars */
+  .acc-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+  .acc-bars-title {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .acc-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .acc-label {
+    width: 110px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+  }
+  .acc-track {
+    flex: 1;
+    height: 28px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .acc-fill {
+    height: 100%;
+    border-radius: 6px;
+    width: 0;
+    transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+  .acc-fill-1 { background: linear-gradient(90deg, rgba(94,234,212,0.15), rgba(94,234,212,0.35)); }
+  .acc-fill-2 { background: linear-gradient(90deg, rgba(74,222,128,0.12), rgba(74,222,128,0.3)); }
+  .acc-fill-3 { background: linear-gradient(90deg, rgba(251,191,36,0.12), rgba(251,191,36,0.3)); }
+  .acc-fill-4 { background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); }
+
+  /* ===== ARCHITECTURE ===== */
+  .arch-flow {
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .arch-node {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 24px 28px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .arch-node:hover {
+    border-color: var(--border-hover);
+    background: rgba(94,234,212,0.02);
+  }
+
+  .arch-node-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .arch-node-icon-1 { background: rgba(96,165,250,0.1); }
+  .arch-node-icon-2 { background: var(--accent-dim); }
+  .arch-node-icon-3 { background: var(--green-dim); }
+  .arch-node-icon-4 { background: var(--warm-dim); }
+
+  .arch-node-tag {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .arch-node-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .arch-node-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .arch-connector {
+    display: flex;
+    justify-content: center;
+    padding: 6px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ===== FEATURES ===== */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 60px;
+  }
+  .feature-card {
+    padding: 32px 28px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  .feature-card:hover {
+    border-color: var(--border-hover);
+  }
+  .feature-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(94,234,212,0.08);
+  }
+  .feature-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .feature-card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ===== UI MOCKUP ===== */
+  .ui-section {
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mockup-window {
+    margin-top: 60px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: 0 32px 64px rgba(0,0,0,0.3);
+  }
+
+  .mockup-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--border);
+  }
+  .tb-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .tb-dot-r { background: #ef4444; }
+  .tb-dot-y { background: #eab308; }
+  .tb-dot-g { background: #22c55e; }
+  .tb-name {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .mockup-app-header {
+    background: #0c2d6b;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mockup-app-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .mockup-app-subtitle {
+    font-size: 11px;
+    color: #93c5fd;
+    margin-top: 1px;
+  }
+  .mockup-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .mockup-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: statusBlink 3s ease-in-out infinite;
+  }
+  @keyframes statusBlink {
+    0%, 80%, 100% { opacity: 1; }
+    40% { opacity: 0.3; }
+  }
+
+  .mockup-main {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 340px;
+    background: #fafafa;
+  }
+
+  .mockup-sidebar {
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mockup-sidebar-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 1.5px;
+  }
+  .mockup-sidebar-btn {
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .mockup-sidebar-btn-primary { background: #2563eb; }
+  .mockup-sidebar-btn-success { background: #16a34a; }
+  .mockup-file-name {
+    font-size: 10px;
+    color: #6b7280;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .mockup-preview-area {
+    flex: 1;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 160px;
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mockup-preview-area svg {
+    opacity: 0.3;
+  }
+
+  .mockup-results {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mockup-result-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 1.5px;
+  }
+
+  .mockup-diagnosis-card {
+    padding: 14px 18px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .diag-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+  }
+  .diag-label {
+    font-size: 9px;
+    color: #6b7280;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .diag-text {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1f2937;
+  }
+
+  .mockup-heatmap-area {
+    border-radius: 8px;
+    height: 120px;
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+  }
+  .mockup-heatmap-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 55% 45%, rgba(239,68,68,0.4), rgba(251,191,36,0.2) 35%, rgba(59,130,246,0.1) 60%, transparent 80%);
+    opacity: 0.8;
+  }
+  .mockup-heatmap-box {
+    position: absolute;
+    top: 22%;
+    left: 33%;
+    width: 34%;
+    height: 45%;
+    border: 1.5px solid #22c55e;
+    border-radius: 3px;
+  }
+  .mockup-heatmap-tag {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .mockup-text-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    flex: 1;
+  }
+  .skel-line {
+    height: 7px;
+    border-radius: 4px;
+    background: #e5e7eb;
+  }
+  .skel-line:nth-child(1) { width: 92%; background: #d1d5db; }
+  .skel-line:nth-child(2) { width: 78%; }
+  .skel-line:nth-child(3) { width: 85%; }
+  .skel-line:nth-child(4) { width: 62%; }
+  .skel-line:nth-child(5) { width: 75%; }
+
+  .mockup-disclaimer {
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: #fefce8;
+    border: 1px solid #fde047;
+    font-size: 10px;
+    font-weight: 600;
+    color: #a16207;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mockup-app-footer {
+    padding: 10px 20px;
+    background: #f3f4f6;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 10px;
+    color: #9ca3af;
+  }
+
+  /* ===== DATASET ===== */
+  .dataset-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  .dataset-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .dataset-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+  .dataset-card:hover {
+    border-color: var(--border-hover);
+    transform: translateX(4px);
+  }
+  .dataset-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .dc-icon-1 { background: rgba(96,165,250,0.1); }
+  .dc-icon-2 { background: var(--red-dim); }
+  .dc-icon-3 { background: var(--green-dim); }
+  .dc-icon-4 { background: var(--warm-dim); }
+  .dataset-card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .dataset-card-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ===== FOOTER ===== */
+  .site-footer {
+    padding: 60px 0 32px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-inner {
+    text-align: center;
+  }
+  .footer-brand {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .footer-brand span { color: var(--accent); }
+  .footer-tagline {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+  }
+  .footer-chips {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .footer-chip {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .footer-copy {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .hero-grid,
+    .problem-layout,
+    .comparison-layout,
+    .dataset-layout { grid-template-columns: 1fr; gap: 48px; }
+    .pipeline-steps { grid-template-columns: 1fr; }
+    .pipeline-step::after { display: none; }
+    .tech-strip { grid-template-columns: repeat(2, 1fr); }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .features-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 48px; }
+    .hero-visual { height: 400px; }
+    .nav-links { display: none; }
+    .mockup-main { grid-template-columns: 1fr; }
+    .annotation { display: none; }
+    section { padding: 80px 0; }
+  }
+
+  @media (max-width: 600px) {
+    .tech-strip, .metrics-row { grid-template-columns: 1fr; }
+    .hero-metrics { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 36px; letter-spacing: -2px; }
+    section { padding: 60px 0; }
+    .section-heading { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">Femur<span>UI</span></div>
+    <ul class="nav-links">
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#metrics">Metrics</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#interface">Interface</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-badge reveal">
+          <div class="hero-badge-dot"></div>
+          AI Decision Support
+        </div>
+        <h1 class="reveal reveal-d1">Femur<br>Fracture<br>Detection</h1>
+        <p class="hero-sub reveal reveal-d2">Deep learning powered bone fracture analysis with explainable AI insights and clinical decision support.</p>
+
+        <div class="hero-metrics reveal reveal-d3">
+          <div class="hero-metric">
+            <div class="hero-metric-value"><span data-count="93.27">0</span><span class="unit">%</span></div>
+            <div class="hero-metric-label">Accuracy</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hero-metric-value"><span data-count="96.24">0</span><span class="unit">%</span></div>
+            <div class="hero-metric-label">AUC Score</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hero-metric-value"><span data-count="97.92">0</span><span class="unit">%</span></div>
+            <div class="hero-metric-label">Precision</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hero-metric-value"><span data-count="524">0</span></div>
+            <div class="hero-metric-label">Training Images</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal reveal-d2">
+        <div class="xray-container">
+          <div class="xray-bone-art">
+            <svg viewBox="0 0 200 300" fill="none">
+              <path d="M70 20 C50 20 35 40 42 60 C30 75 28 95 48 110 L55 125 L52 200 L48 215 C28 230 30 255 42 270 C35 290 50 310 70 310 L130 310 C150 310 165 290 158 270 C170 255 172 230 152 215 L148 200 L145 125 L152 110 C172 95 170 75 158 60 C165 40 150 20 130 20 Z" stroke="rgba(228,228,231,0.5)" stroke-width="1.5" fill="none"/>
+              <line x1="45" y1="175" x2="155" y2="165" stroke="rgba(248,113,113,0.5)" stroke-width="1.5" stroke-dasharray="6 4"/>
+            </svg>
+          </div>
+          <div class="xray-fracture-indicator"></div>
+          <div class="xray-label">
+            <span>FEMUR-AP-001</span>
+            <span class="xray-label-status">FRACTURE</span>
+          </div>
+        </div>
+
+        <div class="annotation annotation-top">
+          <div class="annotation-label">Confidence</div>
+          93.27%
+        </div>
+        <div class="annotation annotation-bottom">
+          <div class="annotation-label">Detection</div>
+          Fracture Found
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section>
+  <div class="container">
+    <div class="problem-layout">
+      <div>
+        <div class="section-tag reveal">The Challenge</div>
+        <h2 class="section-heading reveal reveal-d1">Femur fractures require rapid, accurate diagnosis</h2>
+        <p class="section-desc reveal reveal-d2">Femur fractures are among the most critical orthopedic emergencies. Delayed or missed diagnoses can lead to severe complications. FemurUI leverages deep learning to provide instant, reliable fracture detection with explainable AI insights.</p>
+
+        <div class="problem-stats reveal reveal-d3">
+          <div class="problem-stat-row">
+            <div class="stat-icon stat-icon-red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            </div>
+            <div>
+              <div class="stat-text-value">Critical emergency requiring immediate intervention</div>
+            </div>
+          </div>
+          <div class="problem-stat-row">
+            <div class="stat-icon stat-icon-warm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div>
+              <div class="stat-text-value">Time-sensitive diagnosis window</div>
+            </div>
+          </div>
+          <div class="problem-stat-row">
+            <div class="stat-icon stat-icon-green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+            </div>
+            <div>
+              <div class="stat-text-value">AI-assisted detection reduces diagnostic errors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="problem-visual reveal reveal-d3">
+        <div class="problem-xray-frame">
+          <svg viewBox="0 0 200 300" fill="none">
+            <path d="M70 20 C50 20 35 40 42 60 C30 75 28 95 48 110 L55 125 L52 200 L48 215 C28 230 30 255 42 270 C35 290 50 310 70 310 L130 310 C150 310 165 290 158 270 C170 255 172 230 152 215 L148 200 L145 125 L152 110 C172 95 170 75 158 60 C165 40 150 20 130 20 Z" stroke="rgba(228,228,231,0.35)" stroke-width="1.5" fill="none"/>
+          </svg>
+          <div class="fracture-line"></div>
+          <div class="fracture-crosshair"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline-section" id="pipeline">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">How It Works</div>
+      <h2 class="section-heading reveal reveal-d1">Analysis Pipeline</h2>
+    </div>
+
+    <div class="pipeline-steps reveal reveal-d2">
+      <div class="pipeline-step">
+        <div class="pipeline-num">01</div>
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2"/></svg>
+        </div>
+        <div class="pipeline-title">X-Ray Upload</div>
+        <div class="pipeline-desc">Medical image input via drag & drop interface</div>
+      </div>
+
+      <div class="pipeline-step">
+        <div class="pipeline-num">02</div>
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="8" cy="14" r="2"/><path d="M14 12h4M14 16h4"/></svg>
+        </div>
+        <div class="pipeline-title">Preprocessing</div>
+        <div class="pipeline-desc">256x256 resize, RGB normalization</div>
+      </div>
+
+      <div class="pipeline-step">
+        <div class="pipeline-num">03</div>
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="pipeline-title">AI Classification</div>
+        <div class="pipeline-desc">ResNet50V2 binary classification</div>
+      </div>
+
+      <div class="pipeline-step">
+        <div class="pipeline-num">04</div>
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div class="pipeline-title">Saliency Map</div>
+        <div class="pipeline-desc">Gradient heatmap & bounding box</div>
+      </div>
+
+      <div class="pipeline-step">
+        <div class="pipeline-num">05</div>
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+        </div>
+        <div class="pipeline-title">GPT-4 Report</div>
+        <div class="pipeline-desc">Radiological assessment & recommendations</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section>
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">Technology</div>
+      <h2 class="section-heading reveal reveal-d1">Built With</h2>
+    </div>
+
+    <div class="tech-strip">
+      <div class="tech-item reveal reveal-d1">
+        <div class="tech-icon tech-icon-tf">TF</div>
+        <div class="tech-name">TensorFlow / Keras</div>
+        <div class="tech-detail">ResNet50V2 pre-trained CNN for transfer learning</div>
+      </div>
+      <div class="tech-item reveal reveal-d2">
+        <div class="tech-icon tech-icon-qt">Qt</div>
+        <div class="tech-name">PyQt6 / QML</div>
+        <div class="tech-detail">Modern desktop GUI with fluid animations</div>
+      </div>
+      <div class="tech-item reveal reveal-d3">
+        <div class="tech-icon tech-icon-gpt">G4</div>
+        <div class="tech-name">GPT-4 API</div>
+        <div class="tech-detail">Expert-level radiological explanations</div>
+      </div>
+      <div class="tech-item reveal reveal-d4">
+        <div class="tech-icon tech-icon-cv">CV</div>
+        <div class="tech-name">OpenCV</div>
+        <div class="tech-detail">Saliency map & heatmap visualization</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section id="metrics">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">Performance</div>
+      <h2 class="section-heading reveal reveal-d1">Model Evaluation</h2>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-block reveal reveal-d1" style="--bar-width: 93.27%;">
+        <div class="metric-number"><span data-count="93.27">0</span><span class="pct">%</span></div>
+        <div class="metric-title">Validation Accuracy</div>
+        <div class="metric-subtitle">Overall correctness</div>
+        <div class="metric-bar metric-bar-teal"></div>
+      </div>
+      <div class="metric-block reveal reveal-d2" style="--bar-width: 96.24%;">
+        <div class="metric-number"><span data-count="96.24">0</span><span class="pct">%</span></div>
+        <div class="metric-title">AUC Score</div>
+        <div class="metric-subtitle">Area under ROC curve</div>
+        <div class="metric-bar metric-bar-teal"></div>
+      </div>
+      <div class="metric-block reveal reveal-d3" style="--bar-width: 97.92%;">
+        <div class="metric-number"><span data-count="97.92">0</span><span class="pct">%</span></div>
+        <div class="metric-title">Precision</div>
+        <div class="metric-subtitle">Positive predictive value</div>
+        <div class="metric-bar metric-bar-green"></div>
+      </div>
+      <div class="metric-block reveal reveal-d4" style="--bar-width: 88.68%;">
+        <div class="metric-number"><span data-count="88.68">0</span><span class="pct">%</span></div>
+        <div class="metric-title">Recall</div>
+        <div class="metric-subtitle">Sensitivity</div>
+        <div class="metric-bar metric-bar-warm"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison-section">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">Benchmarks</div>
+      <h2 class="section-heading reveal reveal-d1">Architecture Comparison</h2>
+      <p class="section-desc reveal reveal-d2" style="margin:0 auto;">Four CNN architectures trained and evaluated on the same femur X-ray dataset.</p>
+    </div>
+
+    <div class="comparison-layout">
+      <div class="comparison-table reveal reveal-d3">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Acc.</th>
+              <th>AUC</th>
+              <th>Prec.</th>
+              <th>Recall</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="best-row">
+              <td>ResNet50V2 <span class="best-tag">BEST</span></td>
+              <td>93.27</td>
+              <td>96.24</td>
+              <td>97.92</td>
+              <td>88.68</td>
+            </tr>
+            <tr>
+              <td>EfficientNetV2B0</td>
+              <td>90.38</td>
+              <td>93.50</td>
+              <td>91.30</td>
+              <td>90.57</td>
+            </tr>
+            <tr>
+              <td>InceptionV3</td>
+              <td>88.46</td>
+              <td>91.80</td>
+              <td>89.58</td>
+              <td>88.46</td>
+            </tr>
+            <tr>
+              <td>DenseNet121</td>
+              <td>87.50</td>
+              <td>90.10</td>
+              <td>88.00</td>
+              <td>86.79</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="acc-bars reveal reveal-d4">
+        <div class="acc-bars-title">Accuracy Comparison</div>
+        <div class="acc-row">
+          <div class="acc-label">ResNet50V2</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-1" data-width="93.27">93.3%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">EfficientNet</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-2" data-width="90.38">90.4%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">InceptionV3</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-3" data-width="88.46">88.5%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">DenseNet121</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-4" data-width="87.50">87.5%</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+          <div class="acc-bars-title">AUC Scores</div>
+          <div class="acc-row">
+            <div class="acc-label">ResNet50V2</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-1" data-width="96.24">96.2%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">EfficientNet</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-2" data-width="93.50">93.5%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">InceptionV3</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-3" data-width="91.80">91.8%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">DenseNet121</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-4" data-width="90.10">90.1%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">System Design</div>
+      <h2 class="section-heading reveal reveal-d1">Architecture</h2>
+    </div>
+
+    <div class="arch-flow">
+      <div class="arch-node reveal reveal-d1">
+        <div class="arch-node-icon arch-node-icon-1">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4"/></svg>
+        </div>
+        <div>
+          <div class="arch-node-tag">Input</div>
+          <div class="arch-node-title">X-Ray Image Acquisition</div>
+          <div class="arch-node-detail">PNG / JPG / JPEG / BMP / TIFF &rarr; 256 &times; 256 RGB</div>
+        </div>
+      </div>
+
+      <div class="arch-connector reveal reveal-d1">&darr;</div>
+
+      <div class="arch-node reveal reveal-d2">
+        <div class="arch-node-icon arch-node-icon-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <div class="arch-node-tag">Deep Learning</div>
+          <div class="arch-node-title">ResNet50V2 (ImageNet Pre-trained)</div>
+          <div class="arch-node-detail">Transfer learning &rarr; Binary classification with sigmoid activation</div>
+        </div>
+      </div>
+
+      <div class="arch-connector reveal reveal-d2">&darr;</div>
+
+      <div class="arch-node reveal reveal-d3">
+        <div class="arch-node-icon arch-node-icon-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+        </div>
+        <div>
+          <div class="arch-node-tag">Explainability</div>
+          <div class="arch-node-title">Saliency Map + GPT-4 Report</div>
+          <div class="arch-node-detail">Gradient heatmap &bull; Bounding box focus &bull; Expert radiological assessment</div>
+        </div>
+      </div>
+
+      <div class="arch-connector reveal reveal-d3">&darr;</div>
+
+      <div class="arch-node reveal reveal-d4">
+        <div class="arch-node-icon arch-node-icon-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+        </div>
+        <div>
+          <div class="arch-node-tag">Output</div>
+          <div class="arch-node-title">Interactive Clinical Dashboard</div>
+          <div class="arch-node-detail">PyQt6/QML interface &bull; Color-coded diagnosis &bull; Treatment recommendations</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">Capabilities</div>
+      <h2 class="section-heading reveal reveal-d1">Key Features</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-d1">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="feature-card-title">Deep Learning Classification</div>
+        <div class="feature-card-desc">ResNet50V2 with transfer learning provides 93.27% accuracy for binary fracture detection on femur X-rays.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d2">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div class="feature-card-title">Saliency Map Visualization</div>
+        <div class="feature-card-desc">Gradient-based heatmap shows exactly which regions the AI model focuses on, with bounding box highlighting.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d3">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+        </div>
+        <div class="feature-card-title">GPT-4 Expert Explanation</div>
+        <div class="feature-card-desc">AI-generated radiological assessments describe fracture type, location, significance, and treatment options.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d1">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <div class="feature-card-title">Modern Desktop UI</div>
+        <div class="feature-card-desc">PyQt6 with QML provides a professional, fluid interface with smooth animations and responsive layout.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d2">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feature-card-title">Clinical Safety Warnings</div>
+        <div class="feature-card-desc">Built-in disclaimers ensure the tool is used as decision support, always recommending professional consultation.</div>
+      </div>
+
+      <div class="feature-card reveal reveal-d3">
+        <div class="feature-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="feature-card-title">Real-time Analysis</div>
+        <div class="feature-card-desc">Instant inference with progress indication and seamless result rendering upon completion.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UI SHOWCASE -->
+<section class="ui-section" id="interface">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-tag reveal">Interface</div>
+      <h2 class="section-heading reveal reveal-d1">Application Preview</h2>
+      <p class="section-desc reveal reveal-d2" style="margin:0 auto;">Professional medical UI built with PyQt6/QML featuring real-time analysis and interactive results.</p>
+    </div>
+
+    <div class="mockup-window reveal reveal-d3">
+      <div class="mockup-titlebar">
+        <div class="tb-dot tb-dot-r"></div>
+        <div class="tb-dot tb-dot-y"></div>
+        <div class="tb-dot tb-dot-g"></div>
+        <div class="tb-name">Medical AI Decision Support</div>
+        <div style="width:36px;"></div>
+      </div>
+      <div class="mockup-app-header">
+        <div>
+          <div class="mockup-app-title">Medical AI Decision Support</div>
+          <div class="mockup-app-subtitle">Bone Fracture Detection System</div>
+        </div>
+        <div class="mockup-status">
+          <div class="mockup-status-dot"></div>
+          ONLINE
+        </div>
+      </div>
+      <div class="mockup-main">
+        <div class="mockup-sidebar">
+          <div class="mockup-sidebar-label">IMAGE UPLOAD</div>
+          <div class="mockup-sidebar-btn mockup-sidebar-btn-primary">+ SELECT IMAGE</div>
+          <div class="mockup-file-name">femur_xray_001.png</div>
+          <div class="mockup-preview-area">
+            <svg width="80" height="130" viewBox="0 0 100 160" fill="none">
+              <path d="M35 10C25 10 18 22 22 34C15 42 13 52 25 60L30 68L28 110L25 118C13 126 15 140 22 148C18 158 25 170 35 170L65 170C75 170 82 158 78 148C85 140 87 126 75 118L72 110L70 68L75 60C87 52 85 42 78 34C82 22 75 10 65 10Z" stroke="rgba(200,200,220,0.5)" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+          <div class="mockup-sidebar-btn mockup-sidebar-btn-success">ANALYZE</div>
+        </div>
+        <div class="mockup-results">
+          <div class="mockup-result-label">ANALYSIS RESULTS</div>
+          <div class="mockup-diagnosis-card">
+            <div class="diag-dot"></div>
+            <div>
+              <div class="diag-label">DIAGNOSIS</div>
+              <div class="diag-text">Fracture Detected</div>
+            </div>
+          </div>
+          <div class="mockup-heatmap-area">
+            <div class="mockup-heatmap-glow"></div>
+            <div class="mockup-heatmap-box"></div>
+            <div class="mockup-heatmap-tag">AI FOCUS AREA</div>
+          </div>
+          <div class="mockup-result-label">AI EXPLANATION</div>
+          <div class="mockup-text-skeleton">
+            <div class="skel-line"></div>
+            <div class="skel-line"></div>
+            <div class="skel-line"></div>
+            <div class="skel-line"></div>
+            <div class="skel-line"></div>
+          </div>
+          <div class="mockup-disclaimer">
+            &#9888; Decision support tool. Always consult qualified medical professionals.
+          </div>
+        </div>
+      </div>
+      <div class="mockup-app-footer">
+        Powered by ResNet50V2 + GPT-4 &bull; v1.0
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATASET -->
+<section>
+  <div class="container">
+    <div class="dataset-layout">
+      <div>
+        <div class="section-tag reveal">Training Data</div>
+        <h2 class="section-heading reveal reveal-d1">Dataset Overview</h2>
+        <p class="section-desc reveal reveal-d2">Curated femur X-ray dataset with balanced binary classes for robust fracture detection training.</p>
+
+        <div class="dataset-cards">
+          <div class="dataset-card reveal reveal-d2">
+            <div class="dataset-card-icon dc-icon-1">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div>
+              <div class="dataset-card-value">524</div>
+              <div class="dataset-card-label">Total X-ray images</div>
+            </div>
+          </div>
+          <div class="dataset-card reveal reveal-d3">
+            <div class="dataset-card-icon dc-icon-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="dataset-card-value">2</div>
+              <div class="dataset-card-label">Classes (Fracture / Healthy)</div>
+            </div>
+          </div>
+          <div class="dataset-card reveal reveal-d4">
+            <div class="dataset-card-icon dc-icon-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div>
+              <div class="dataset-card-value">420</div>
+              <div class="dataset-card-label">Training images (80%)</div>
+            </div>
+          </div>
+          <div class="dataset-card reveal reveal-d5">
+            <div class="dataset-card-icon dc-icon-4">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div>
+              <div class="dataset-card-value">104</div>
+              <div class="dataset-card-label">Validation images (20%)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-bars reveal reveal-d3" style="margin-top:60px;">
+        <div class="acc-bars-title">Model Accuracy</div>
+        <div class="acc-row">
+          <div class="acc-label">ResNet50V2</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-1" data-width="93.27">93.3%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">EfficientNet</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-2" data-width="90.38">90.4%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">InceptionV3</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-3" data-width="88.46">88.5%</div>
+          </div>
+        </div>
+        <div class="acc-row">
+          <div class="acc-label">DenseNet121</div>
+          <div class="acc-track">
+            <div class="acc-fill acc-fill-4" data-width="87.50">87.5%</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+          <div class="acc-bars-title">AUC Scores</div>
+          <div class="acc-row">
+            <div class="acc-label">ResNet50V2</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-1" data-width="96.24">96.2%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">EfficientNet</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-2" data-width="93.50">93.5%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">InceptionV3</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-3" data-width="91.80">91.8%</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div class="acc-label">DenseNet121</div>
+            <div class="acc-track">
+              <div class="acc-fill acc-fill-4" data-width="90.10">90.1%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">Femur<span>UI</span></div>
+      <div class="footer-tagline">Medical AI Decision Support &mdash; Femur Fracture Detection</div>
+      <div class="footer-chips">
+        <span class="footer-chip">Python</span>
+        <span class="footer-chip">TensorFlow</span>
+        <span class="footer-chip">ResNet50V2</span>
+        <span class="footer-chip">PyQt6 / QML</span>
+        <span class="footer-chip">OpenCV</span>
+        <span class="footer-chip">GPT-4 API</span>
+        <span class="footer-chip">NumPy</span>
+        <span class="footer-chip">Pillow</span>
+      </div>
+      <div class="footer-copy">&copy; 2026 FemurUI</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Nav scroll effect
+(function() {
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+})();
+
+// Scroll reveal (single observer, clean)
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  document.querySelectorAll('.metric-block').forEach(el => observer.observe(el));
+})();
+
+// Bar fills
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const w = entry.target.getAttribute('data-width');
+        entry.target.style.width = w + '%';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.acc-fill').forEach(el => observer.observe(el));
+})();
+
+// Counter animation
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseFloat(el.getAttribute('data-count'));
+        const isDecimal = target % 1 !== 0;
+        const duration = 1800;
+        const start = performance.now();
+
+        function update(now) {
+          const t = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          const val = target * ease;
+          el.textContent = isDecimal ? val.toFixed(2) : Math.round(val);
+          if (t < 1) requestAnimationFrame(update);
+          else el.textContent = isDecimal ? target.toFixed(2) : Math.round(target);
+        }
+
+        requestAnimationFrame(update);
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
+})();
+</script>
+
+</body>
+</html>
